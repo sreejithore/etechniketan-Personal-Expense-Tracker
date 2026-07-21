@@ -1,15 +1,8 @@
-"""
-cli_view.py
-Presentation logic and text formatting for the Personal Expense Tracker CLI application.
-Handles structural tabular output formatting and visual Financial Telemetry Dashboards.
-"""
 import sys
-from typing import List, Dict, Any
 from expense import Expense
 
 
-def get_currency_symbol() -> str:
-    """Returns '₹' if terminal supports UTF-8, otherwise falls back to 'Rs.'."""
+def get_currency_symbol():
     try:
         if sys.stdout and sys.stdout.encoding:
             "₹".encode(sys.stdout.encoding)
@@ -22,28 +15,21 @@ def get_currency_symbol() -> str:
 CURRENCY_SYMBOL = get_currency_symbol()
 
 
-def print_header(title: str) -> None:
-    """Prints a styled header line."""
+def print_header(title):
     border = "=" * 67
     print(f"\n{border}")
     print(f" {title.center(65)} ")
     print(f"{border}")
 
 
-def display_expense_table(expenses: List[Expense]) -> None:
-    """
-    Displays a collection of Expense objects formatted cleanly in a structural tabular format.
-    """
+def display_expense_table(expenses):
     if not expenses:
         print("\n-------------------------------------------------------------------")
         print(" [INFO]: No expense records found in the ledger.")
         print("-------------------------------------------------------------------")
         return
 
-    # Dynamic symbol selection
     sym = get_currency_symbol()
-
-    # Table layout definitions
     id_w = 6
     date_w = 12
     cat_w = 15
@@ -61,9 +47,16 @@ def display_expense_table(expenses: List[Expense]) -> None:
     print(line_sep)
 
     for exp in expenses:
-        # Truncate title if it exceeds column width
-        disp_title = exp.title if len(exp.title) <= title_w else exp.title[: title_w - 3] + "..."
-        disp_cat = exp.category if len(exp.category) <= cat_w else exp.category[: cat_w - 3] + "..."
+        if len(exp.title) <= title_w:
+            disp_title = exp.title
+        else:
+            disp_title = exp.title[: title_w - 3] + "..."
+
+        if len(exp.category) <= cat_w:
+            disp_cat = exp.category
+        else:
+            disp_cat = exp.category[: cat_w - 3] + "..."
+
         amt_str = f"{sym}{exp.amount:,.2f}"
 
         row_str = (
@@ -76,14 +69,8 @@ def display_expense_table(expenses: List[Expense]) -> None:
     print(f" Total Count: {len(expenses)} item(s)\n")
 
 
-def display_telemetry_dashboard(metrics: Dict[str, Any]) -> None:
-    """
-    Renders the real-time Financial Telemetry Dashboard including category-wise spending
-    breakdowns, live grand totals, and text bar charts.
-    """
+def display_telemetry_dashboard(metrics):
     sym = get_currency_symbol()
-
-    # Check progress bar block character encoding support
     use_blocks = True
     try:
         if sys.stdout and sys.stdout.encoding:
@@ -96,7 +83,11 @@ def display_telemetry_dashboard(metrics: Dict[str, Any]) -> None:
     grand_total = metrics["grand_total"]
     total_items = metrics["total_items"]
     print(f"Grand Combined Total Expenditures : {sym}{grand_total:,.2f}")
-    print(f"Total Active Unique Tracked Items : {total_items} Record{'s' if total_items != 1 else ''}")
+    if total_items == 1:
+        record_label = "Record"
+    else:
+        record_label = "Records"
+    print(f"Total Active Unique Tracked Items : {total_items} {record_label}")
 
     if total_items > 0:
         print(f"Average Expense Per Record       : {sym}{metrics['avg_expense']:,.2f}")
@@ -105,24 +96,30 @@ def display_telemetry_dashboard(metrics: Dict[str, Any]) -> None:
             print(f"Highest Single Expense           : {sym}{max_e.amount:,.2f} ({max_e.title} - {max_e.category})")
 
     print("\n--- DYNAMIC CATEGORY-WISE BREAKDOWN ---")
-    cat_map: Dict[str, float] = metrics.get("category_breakdown", {})
+    cat_map = metrics.get("category_breakdown", {})
 
     if not cat_map:
         print("No category data available.")
     else:
-        # Determine maximum key length for alignment
-        max_cat_len = max(len(cat) for cat in cat_map.keys())
-        max_cat_len = max(max_cat_len, 14)
+        max_cat_len = 14
+        for cat in cat_map.keys():
+            if len(cat) > max_cat_len:
+                max_cat_len = len(cat)
 
-        # Sort categories by spending descending
         sorted_cats = sorted(cat_map.items(), key=lambda item: item[1], reverse=True)
 
         for cat_name, cat_amount in sorted_cats:
-            percentage = (cat_amount / grand_total * 100) if grand_total > 0 else 0
-            
-            # Generate visual text progress bar (10 blocks long)
+            if grand_total > 0:
+                percentage = cat_amount / grand_total * 100
+            else:
+                percentage = 0
+
             bar_blocks = int(round(percentage / 10))
-            bar_blocks = max(0, min(10, bar_blocks))
+            if bar_blocks < 0:
+                bar_blocks = 0
+            if bar_blocks > 10:
+                bar_blocks = 10
+
             if use_blocks:
                 progress_bar = f"[{'█' * bar_blocks}{'░' * (10 - bar_blocks)}]"
             else:
@@ -135,8 +132,7 @@ def display_telemetry_dashboard(metrics: Dict[str, Any]) -> None:
     print("\n=====================================================================")
 
 
-def display_single_expense(expense: Expense) -> None:
-    """Displays a single expense record formatted in a card box layout."""
+def display_single_expense(expense):
     sym = get_currency_symbol()
     print("\n+----------------------------------------------------+")
     print(f"|  EXPENSE DETAILS RECORD [ID: {expense.id}]".ljust(53) + "|")

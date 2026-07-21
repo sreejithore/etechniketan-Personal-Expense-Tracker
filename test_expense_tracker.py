@@ -1,18 +1,8 @@
-"""
-test_expense_tracker.py
-Comprehensive unit test suite for the Personal Expense Tracker application.
-Run with: python -m unittest test_expense_tracker.py
-"""
-
 import os
 import unittest
 from datetime import datetime
 from expense import Expense
 from tracker import ExpenseTracker
-from validators import (
-    prompt_amount,
-    prompt_date,
-)
 
 
 class TestExpenseModel(unittest.TestCase):
@@ -66,7 +56,7 @@ class TestExpenseTracker(unittest.TestCase):
         updated = self.tracker.search_expense(101)
         self.assertEqual(updated.title, "Client Lunch")
         self.assertEqual(updated.amount, 200.00)
-        self.assertEqual(updated.category, "Food")  # unchanged
+        self.assertEqual(updated.category, "Food")
 
     def test_delete_expense(self):
         e1 = self.tracker.add_expense("Lunch", 192.50, "Food", "17-07-2026")
@@ -97,7 +87,6 @@ class TestExpenseTracker(unittest.TestCase):
         self.assertTrue(save_success)
         self.assertTrue(os.path.exists(self.test_filename))
 
-        # Create fresh tracker instance and load
         new_tracker = ExpenseTracker(filepath=self.test_filename)
         load_success, loaded_count = new_tracker.load_from_csv()
         self.assertTrue(load_success)
